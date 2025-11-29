@@ -51,12 +51,6 @@ export default function Navbar({
         </div>
 
         <div className="navbar-right">
-          <button className="nav-icon-btn" title="Account">
-            <span>👤</span>
-          </button>
-          <button className="nav-icon-btn" title="Favorites">
-            <span>❤️</span>
-          </button>
           <button
             className="nav-icon-btn cart-btn"
             title="Shopping Cart"

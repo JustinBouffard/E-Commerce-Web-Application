@@ -92,9 +92,12 @@
   font-family: inherit;
   transition: all 0.3s ease;
   text-align: left;
+  direction: ltr;
+  padding-left: 0.75rem;
 }
 
 .form-input::placeholder {
+  color: #a0a0a0;
   text-align: left;
 }
 
@@ -113,6 +116,26 @@
   box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
 }
 
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.2em 1.2em;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+select.form-input option {
+  color: #2c3e50;
+  background-color: white;
+  padding: 0.5rem;
+}
+
+select.form-input:hover:not(:disabled) {
+  border-color: #3498db;
+}
+
 .field-error {
   color: #e74c3c;
   font-size: 0.85rem;
@@ -128,6 +151,62 @@
   font-size: 0.85rem;
   margin-top: 0.25rem;
   margin-bottom: 0;
+}
+
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border: 2px solid #ecf0f1;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.payment-option input[type="radio"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  accent-color: #3498db;
+}
+
+.payment-option:hover {
+  border-color: #3498db;
+  background-color: #ecf7ff;
+}
+
+.payment-option input[type="radio"]:checked + .payment-label {
+  font-weight: 600;
+  color: #3498db;
+}
+
+.payment-label {
+  font-size: 0.95rem;
+  color: #2c3e50;
+  cursor: pointer;
+  flex: 1;
+}
+
+.payment-info-message {
+  background-color: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.payment-info-message p {
+  margin: 0;
+  color: #1565c0;
+  font-size: 0.95rem;
 }
 
 .form-actions {

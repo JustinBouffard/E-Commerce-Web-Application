@@ -1,20 +1,31 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
-import ProductList from "./components/ProductList";
-import ProductDetail from "./components/ProductDetail";
-import Cart from "./components/Cart";
-import Checkout from "./components/Checkout";
-import OrderConfirmation from "./components/OrderConfirmation";
+import ProductList from "./pages/ProductList";
+import ProductDetail from "./pages/ProductDetail";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import OrderConfirmation from "./pages/OrderConfirmation";
 import Footer from "./components/Footer";
-import "./App.css";
+import "./styles/App.css";
+
+// Helper functions to initialize state from localStorage
+const getInitialSearchQuery = () => {
+  const saved = localStorage.getItem("searchQuery");
+  return saved ? saved : "";
+};
+
+const getInitialSortBy = () => {
+  const saved = localStorage.getItem("sortBy");
+  return saved ? saved : "popularity";
+};
 
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(getInitialSearchQuery());
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState("popularity");
+  const [sortBy, setSortBy] = useState(getInitialSortBy());
   const [cart, setCart] = useState([]);
   const [userReviews, setUserReviews] = useState({});
   const [lastOrder, setLastOrder] = useState(null);
@@ -61,6 +72,16 @@ function App() {
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
+
+  // Persist search query to localStorage
+  useEffect(() => {
+    localStorage.setItem("searchQuery", searchQuery);
+  }, [searchQuery]);
+
+  // Persist sort preference to localStorage
+  useEffect(() => {
+    localStorage.setItem("sortBy", sortBy);
+  }, [sortBy]);
 
   // Persist user reviews to localStorage
   useEffect(() => {
@@ -145,7 +166,7 @@ function App() {
   const handleCheckout = (orderData) => {
     setLastOrder(orderData);
     clearCart();
-    navigate(`/order-confirmation/${orderData.orderId}`);
+    navigate(`/order-confirmation`);
   };
 
   return (
@@ -211,7 +232,7 @@ function App() {
             }
           />
           <Route
-            path="/order-confirmation/:orderId"
+            path="/order-confirmation"
             element={
               <OrderConfirmation
                 order={lastOrder}

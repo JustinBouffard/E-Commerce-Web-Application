@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Checkout.css";
+import "../styles/Checkout.css";
 
 export default function Checkout({ cart, onCheckout, onCancel }) {
   const navigate = useNavigate();
@@ -13,6 +13,7 @@ export default function Checkout({ cart, onCheckout, onCancel }) {
     city: "",
     state: "",
     zipCode: "",
+    paymentMethod: "credit-card",
     cardNumber: "",
     expiryDate: "",
     cvv: "",
@@ -28,47 +29,20 @@ export default function Checkout({ cart, onCheckout, onCancel }) {
   }, 0);
 
   // Calculate tax based on province/state
-  const calculateTax = () => {
-    let taxAmount = 0;
+  const tax = useMemo(() => {
     const state = formData.state?.trim().toUpperCase() || "";
-
-    // GST (5% Canada)
+    // GST (5% Canada) always applies
     const gst = subtotal * 0.05;
 
-    // QST (9.975% Quebec) - only if Quebec is selected
+    // QST (9.975% Quebec) only if Quebec is selected
+    let qst = 0;
     if (state === "QC" || state === "QUEBEC") {
-      // In Quebec, both GST and QST apply
-      taxAmount = gst + subtotal * 0.09975;
-    } else {
-      // For other provinces/states, just GST or no tax
-      // Assuming GST for Canada provinces, no tax for US states
-      if (state && (state.length === 2 || state.length > 2)) {
-        // If it looks like a Canadian province code or name
-        const canadianProvinces = [
-          "AB",
-          "BC",
-          "MB",
-          "NB",
-          "NL",
-          "NS",
-          "NT",
-          "NU",
-          "ON",
-          "PE",
-          "QC",
-          "SK",
-          "YT",
-        ];
-        if (canadianProvinces.includes(state.substring(0, 2))) {
-          taxAmount = gst;
-        }
-      }
+      qst = subtotal * 0.09975;
     }
 
-    return taxAmount;
-  };
+    return gst + qst;
+  }, [formData.state, subtotal]);
 
-  const tax = calculateTax();
   const shipping = subtotal > 100 ? 0 : 10; // Free shipping over $100
   const total = subtotal + tax + shipping;
 
@@ -92,23 +66,38 @@ export default function Checkout({ cart, onCheckout, onCancel }) {
     if (!formData.city.trim()) newErrors.city = "City is required";
     if (!formData.state.trim()) newErrors.state = "State is required";
     if (!formData.zipCode.trim()) newErrors.zipCode = "ZIP code is required";
-    if (!formData.cardNumber.trim()) {
-      newErrors.cardNumber = "Card number is required";
-    } else if (!/^\d{16}$/.test(formData.cardNumber.replace(/\s/g, ""))) {
-      newErrors.cardNumber = "Invalid card number (16 digits required)";
-    }
-    if (!formData.expiryDate.trim()) {
-      newErrors.expiryDate = "Expiry date is required";
-    } else if (!/^\d{2}\/\d{2}$/.test(formData.expiryDate)) {
-      newErrors.expiryDate = "Invalid format (MM/YY)";
-    }
-    if (!formData.cvv.trim()) {
-      newErrors.cvv = "CVV is required";
-    } else if (!/^\d{3,4}$/.test(formData.cvv)) {
-      newErrors.cvv = "Invalid CVV (3-4 digits)";
+
+    // Only validate card details if credit card is selected
+    if (formData.paymentMethod === "credit-card") {
+      if (!formData.cardNumber.trim()) {
+        newErrors.cardNumber = "Card number is required";
+      } else if (!/^\d{16}$/.test(formData.cardNumber.replace(/\s/g, ""))) {
+        newErrors.cardNumber = "Invalid card number (16 digits required)";
+      }
+      if (!formData.expiryDate.trim()) {
+        newErrors.expiryDate = "Expiry date is required";
+      } else if (!/^\d{2}\/\d{2}$/.test(formData.expiryDate)) {
+        newErrors.expiryDate = "Invalid format (MM/YY)";
+      }
+      if (!formData.cvv.trim()) {
+        newErrors.cvv = "CVV is required";
+      } else if (!/^\d{3,4}$/.test(formData.cvv)) {
+        newErrors.cvv = "Invalid CVV (3-4 digits)";
+      }
     }
 
     setErrors(newErrors);
+
+    // Scroll to the first error field if validation fails
+    if (Object.keys(newErrors).length > 0) {
+      const firstErrorField = Object.keys(newErrors)[0];
+      const errorElement = document.getElementById(firstErrorField);
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        errorElement.focus();
+      }
+    }
+
     return Object.keys(newErrors).length === 0;
   };
 
@@ -185,6 +174,7 @@ export default function Checkout({ cart, onCheckout, onCancel }) {
         tax: parseFloat(tax.toFixed(2)),
         shipping: shipping,
         total: parseFloat(total.toFixed(2)),
+        paymentMethod: formData.paymentMethod,
       };
 
       onCheckout(orderData);
@@ -331,16 +321,29 @@ export default function Checkout({ cart, onCheckout, onCancel }) {
                   )}
                 </div>
                 <div className="form-group">
-                  <label htmlFor="state">State *</label>
-                  <input
-                    type="text"
+                  <label htmlFor="state">Province *</label>
+                  <select
                     id="state"
                     name="state"
                     value={formData.state}
                     onChange={handleChange}
                     className={`form-input ${errors.state ? "error" : ""}`}
-                    placeholder="Your state/province"
-                  />
+                  >
+                    <option value="">Select a province</option>
+                    <option value="AB">Alberta (AB)</option>
+                    <option value="BC">British Columbia (BC)</option>
+                    <option value="MB">Manitoba (MB)</option>
+                    <option value="NB">New Brunswick (NB)</option>
+                    <option value="NL">Newfoundland and Labrador (NL)</option>
+                    <option value="NS">Nova Scotia (NS)</option>
+                    <option value="NT">Northwest Territories (NT)</option>
+                    <option value="NU">Nunavut (NU)</option>
+                    <option value="ON">Ontario (ON)</option>
+                    <option value="PE">Prince Edward Island (PE)</option>
+                    <option value="QC">Quebec (QC)</option>
+                    <option value="SK">Saskatchewan (SK)</option>
+                    <option value="YT">Yukon (YT)</option>
+                  </select>
                   {errors.state && (
                     <span className="field-error">{errors.state}</span>
                   )}
@@ -365,62 +368,124 @@ export default function Checkout({ cart, onCheckout, onCancel }) {
 
             {/* Payment Information */}
             <fieldset className="form-fieldset">
-              <legend className="form-legend">Payment Information</legend>
+              <legend className="form-legend">Payment Method</legend>
 
               <div className="form-group">
-                <label htmlFor="cardNumber">Card Number *</label>
-                <input
-                  type="text"
-                  id="cardNumber"
-                  name="cardNumber"
-                  value={formData.cardNumber}
-                  onChange={handleCardNumberChange}
-                  className={`form-input ${errors.cardNumber ? "error" : ""}`}
-                  placeholder="Your 16-digit card number"
-                  maxLength="19"
-                />
-                {errors.cardNumber && (
-                  <span className="field-error">{errors.cardNumber}</span>
-                )}
-                <p className="field-hint">
-                  We accept Visa, Mastercard, and American Express
-                </p>
+                <label>Select Payment Method *</label>
+                <div className="payment-methods">
+                  <label className="payment-option">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="credit-card"
+                      checked={formData.paymentMethod === "credit-card"}
+                      onChange={handleChange}
+                    />
+                    <span className="payment-label">💳 Credit Card</span>
+                  </label>
+                  <label className="payment-option">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="paypal"
+                      checked={formData.paymentMethod === "paypal"}
+                      onChange={handleChange}
+                    />
+                    <span className="payment-label">🅿️ PayPal</span>
+                  </label>
+                  <label className="payment-option">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="bank-transfer"
+                      checked={formData.paymentMethod === "bank-transfer"}
+                      onChange={handleChange}
+                    />
+                    <span className="payment-label">🏦 Bank Transfer</span>
+                  </label>
+                </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="expiryDate">Expiry Date *</label>
-                  <input
-                    type="text"
-                    id="expiryDate"
-                    name="expiryDate"
-                    value={formData.expiryDate}
-                    onChange={handleExpiryDateChange}
-                    className={`form-input ${errors.expiryDate ? "error" : ""}`}
-                    placeholder="MM/YY"
-                    maxLength="5"
-                  />
-                  {errors.expiryDate && (
-                    <span className="field-error">{errors.expiryDate}</span>
-                  )}
+              {formData.paymentMethod === "credit-card" && (
+                <>
+                  <div className="form-group">
+                    <label htmlFor="cardNumber">Card Number *</label>
+                    <input
+                      type="text"
+                      id="cardNumber"
+                      name="cardNumber"
+                      value={formData.cardNumber}
+                      onChange={handleCardNumberChange}
+                      className={`form-input ${
+                        errors.cardNumber ? "error" : ""
+                      }`}
+                      placeholder="Your 16-digit card number"
+                      maxLength="19"
+                    />
+                    {errors.cardNumber && (
+                      <span className="field-error">{errors.cardNumber}</span>
+                    )}
+                    <p className="field-hint">
+                      We accept Visa, Mastercard, and American Express
+                    </p>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="expiryDate">Expiry Date *</label>
+                      <input
+                        type="text"
+                        id="expiryDate"
+                        name="expiryDate"
+                        value={formData.expiryDate}
+                        onChange={handleExpiryDateChange}
+                        className={`form-input ${
+                          errors.expiryDate ? "error" : ""
+                        }`}
+                        placeholder="MM/YY"
+                        maxLength="5"
+                      />
+                      {errors.expiryDate && (
+                        <span className="field-error">{errors.expiryDate}</span>
+                      )}
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="cvv">CVV *</label>
+                      <input
+                        type="text"
+                        id="cvv"
+                        name="cvv"
+                        value={formData.cvv}
+                        onChange={handleChange}
+                        className={`form-input ${errors.cvv ? "error" : ""}`}
+                        placeholder="Your 3-4 digit CVV"
+                        maxLength="4"
+                      />
+                      {errors.cvv && (
+                        <span className="field-error">{errors.cvv}</span>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {formData.paymentMethod === "paypal" && (
+                <div className="payment-info-message">
+                  <p>
+                    You will be redirected to PayPal to complete your payment
+                    securely.
+                  </p>
                 </div>
-                <div className="form-group">
-                  <label htmlFor="cvv">CVV *</label>
-                  <input
-                    type="text"
-                    id="cvv"
-                    name="cvv"
-                    value={formData.cvv}
-                    onChange={handleChange}
-                    className={`form-input ${errors.cvv ? "error" : ""}`}
-                    placeholder="Your 3-4 digit CVV"
-                    maxLength="4"
-                  />
-                  {errors.cvv && (
-                    <span className="field-error">{errors.cvv}</span>
-                  )}
+              )}
+
+              {formData.paymentMethod === "bank-transfer" && (
+                <div className="payment-info-message">
+                  <p>
+                    Bank transfer details will be provided after you complete
+                    your order.
+                  </p>
                 </div>
-              </div>
+              )}
             </fieldset>
 
             <div className="form-actions">
@@ -485,13 +550,8 @@ export default function Checkout({ cart, onCheckout, onCancel }) {
                       {" "}
                       (GST 5% + QST 9.975%)
                     </span>
-                  ) : formData.state ? (
-                    <span className="tax-breakdown"> (GST 5%)</span>
                   ) : (
-                    <span className="tax-breakdown">
-                      {" "}
-                      (Calculated on checkout)
-                    </span>
+                    <span className="tax-breakdown"> (GST 5%)</span>
                   )}
                 </span>
                 <span className="calc-value">${tax.toFixed(2)}</span>

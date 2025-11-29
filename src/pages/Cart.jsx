@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import "./Cart.css";
+import "../styles/Cart.css";
 
 export default function Cart({ cart, onRemove, onUpdateQuantity, onCheckout }) {
   const navigate = useNavigate();

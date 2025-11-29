@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import ProductCard from "./ProductCard";
+import ProductCard from "../components/ProductCard";
 
 export default function ProductList({
   searchQuery,

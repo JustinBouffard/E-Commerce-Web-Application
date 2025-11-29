@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function ProductCard({
@@ -8,7 +7,6 @@ export default function ProductCard({
   onAddToCart,
 }) {
   const navigate = useNavigate();
-  const [addedToCart, setAddedToCart] = useState(false);
   const discountedPrice = (
     product.price *
     (1 - product.discountPercentage / 100)
@@ -34,7 +32,10 @@ export default function ProductCard({
   const hasHalfStar = ratingValue % 1 >= 0.5;
 
   return (
-    <div className="product-card" onClick={() => navigate(`/product/${product.id}`)}>
+    <div
+      className="product-card"
+      onClick={() => navigate(`/product/${product.id}`)}
+    >
       <div className="product-image-wrapper">
         <div className="product-image-container">
           <img
@@ -94,19 +95,6 @@ export default function ProductCard({
           >
             {product.availabilityStatus}
           </span>
-          <button
-            className={`add-to-cart-btn ${addedToCart ? "added" : ""}`}
-            title="Add to cart"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddToCart(product, 1);
-              setAddedToCart(true);
-              // Reset the "added to cart" state after 2 seconds
-              setTimeout(() => setAddedToCart(false), 2000);
-            }}
-          >
-            <span>{addedToCart ? "✓" : "🛒"}</span>
-          </button>
         </div>
       </div>
     </div>

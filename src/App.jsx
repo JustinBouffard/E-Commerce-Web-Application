@@ -1,17 +1,233 @@
-import { useState } from 'react'
-import Navbar from './components/Navbar'
-import ProductList from './components/ProductList'
-import './App.css'
+import { useState, useEffect } from "react";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import ProductList from "./components/ProductList";
+import ProductDetail from "./components/ProductDetail";
+import Cart from "./components/Cart";
+import Checkout from "./components/Checkout";
+import OrderConfirmation from "./components/OrderConfirmation";
+import Footer from "./components/Footer";
+import "./App.css";
 
 function App() {
-  const [searchQuery, setSearchQuery] = useState('')
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState("popularity");
+  const [cart, setCart] = useState([]);
+  const [userReviews, setUserReviews] = useState({});
+  const [lastOrder, setLastOrder] = useState(null);
+
+  // Initialize state from localStorage on mount
+  useEffect(() => {
+    // Load user reviews from localStorage
+    const savedReviews = localStorage.getItem("userReviews");
+    if (savedReviews) {
+      try {
+        const parsedReviews = JSON.parse(savedReviews);
+        setUserReviews(parsedReviews);
+      } catch (error) {
+        console.error("Failed to load reviews from localStorage:", error);
+      }
+    }
+
+    // Load cart from localStorage
+    const savedCart = localStorage.getItem("cart");
+    if (savedCart) {
+      try {
+        const parsedCart = JSON.parse(savedCart);
+        if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+          setCart(parsedCart);
+        }
+      } catch (error) {
+        console.error("Failed to load cart from localStorage:", error);
+      }
+    }
+
+    // Load last order from localStorage
+    const savedOrder = localStorage.getItem("lastOrder");
+    if (savedOrder) {
+      try {
+        const parsedOrder = JSON.parse(savedOrder);
+        setLastOrder(parsedOrder);
+      } catch (error) {
+        console.error("Failed to load last order from localStorage:", error);
+      }
+    }
+  }, []);
+
+  // Persist cart to localStorage
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }, [cart]);
+
+  // Persist user reviews to localStorage
+  useEffect(() => {
+    if (Object.keys(userReviews).length > 0) {
+      localStorage.setItem("userReviews", JSON.stringify(userReviews));
+    }
+  }, [userReviews]);
+
+  // Persist last order to localStorage
+  useEffect(() => {
+    if (lastOrder) {
+      localStorage.setItem("lastOrder", JSON.stringify(lastOrder));
+    }
+  }, [lastOrder]);
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handleSortChange = (sort) => {
+    setSortBy(sort);
+  };
+
+  const addToCart = (product, quantity) => {
+    setCart((prevCart) => {
+      const existingItem = prevCart.find((item) => item.id === product.id);
+      if (existingItem) {
+        return prevCart.map((item) =>
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        );
+      }
+      return [...prevCart, { ...product, quantity }];
+    });
+  };
+
+  const removeFromCart = (productId) => {
+    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+  };
+
+  const updateCartQuantity = (productId, quantity) => {
+    if (quantity <= 0) {
+      removeFromCart(productId);
+    } else {
+      setCart((prevCart) =>
+        prevCart.map((item) =>
+          item.id === productId ? { ...item, quantity } : item
+        )
+      );
+    }
+  };
+
+  const clearCart = () => {
+    setCart([]);
+  };
+
+  const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
+
+  const addUserReview = (productId, review) => {
+    const id = String(productId);
+    setUserReviews((prevReviews) => {
+      const productReviews = prevReviews[id] || [];
+      const updatedReviews = {
+        ...prevReviews,
+        [id]: [...productReviews, review],
+      };
+      localStorage.setItem("userReviews", JSON.stringify(updatedReviews));
+      return updatedReviews;
+    });
+  };
+
+  const getProductReviews = (productId) => {
+    return userReviews[String(productId)] || [];
+  };
+
+  const handleCheckout = (orderData) => {
+    setLastOrder(orderData);
+    clearCart();
+    navigate(`/order-confirmation/${orderData.orderId}`);
+  };
 
   return (
-    <main className="app">
-      <Navbar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-      <ProductList searchQuery={searchQuery} />
-    </main>
-  )
+    <>
+      <main className="app">
+        <Navbar
+          searchQuery={searchQuery}
+          onSearchChange={handleSearch}
+          cartItemCount={cartItemCount}
+          onHomeClick={() => {
+            setSearchQuery("");
+            setCurrentPage(1);
+            navigate("/");
+          }}
+        />
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <ProductList
+                searchQuery={searchQuery}
+                onProductClick={(productId) =>
+                  navigate(`/product/${productId}`)
+                }
+                currentPage={currentPage}
+                onPageChange={handlePageChange}
+                sortBy={sortBy}
+                onSortChange={handleSortChange}
+                userReviews={userReviews}
+                onAddToCart={addToCart}
+              />
+            }
+          />
+          <Route
+            path="/product/:productId"
+            element={
+              <ProductDetail
+                onAddToCart={addToCart}
+                userReviews={userReviews}
+                onAddReview={addUserReview}
+              />
+            }
+          />
+          <Route
+            path="/cart"
+            element={
+              <Cart
+                cart={cart}
+                onRemove={removeFromCart}
+                onUpdateQuantity={updateCartQuantity}
+                onCheckout={() => navigate("/checkout")}
+              />
+            }
+          />
+          <Route
+            path="/checkout"
+            element={
+              <Checkout
+                cart={cart}
+                onCheckout={handleCheckout}
+                onCancel={() => navigate("/cart")}
+              />
+            }
+          />
+          <Route
+            path="/order-confirmation/:orderId"
+            element={
+              <OrderConfirmation
+                order={lastOrder}
+                onContinueShopping={() => {
+                  setSearchQuery("");
+                  setCurrentPage(1);
+                  navigate("/");
+                }}
+              />
+            }
+          />
+        </Routes>
+      </main>
+      <Footer />
+    </>
+  );
 }
 
-export default App
+export default App;

@@ -1,21 +1,55 @@
-export default function Navbar({ searchQuery, onSearchChange }) {
+import { useNavigate } from "react-router-dom";
+
+export default function Navbar({
+  searchQuery,
+  onSearchChange,
+  cartItemCount,
+  onHomeClick,
+}) {
+  const navigate = useNavigate();
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      // Search is automatically handled by parent through onSearchChange
+    }
+  };
+
+  const handleSearchChange = (value) => {
+    onSearchChange(value);
+  };
+
+  const handleCartButtonClick = () => {
+    navigate("/cart");
+  };
+
+  const handleHome = () => {
+    onHomeClick();
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
         <div className="navbar-brand">
-          <h1 className="brand-logo">ShopHub</h1>
+          <button
+            className="brand-logo-btn"
+            onClick={handleHome}
+            title="Go to home page"
+          >
+            <h1 className="brand-logo">ShopHub</h1>
+          </button>
         </div>
-        
+
         <div className="navbar-center">
-          <input 
-            type="text" 
-            placeholder="Search products..." 
+          <input
+            type="text"
+            placeholder="Search products..."
             className="search-input"
             value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onKeyPress={handleKeyPress}
           />
         </div>
-        
+
         <div className="navbar-right">
           <button className="nav-icon-btn" title="Account">
             <span>👤</span>
@@ -23,9 +57,15 @@ export default function Navbar({ searchQuery, onSearchChange }) {
           <button className="nav-icon-btn" title="Favorites">
             <span>❤️</span>
           </button>
-          <button className="nav-icon-btn cart-btn" title="Shopping Cart">
+          <button
+            className="nav-icon-btn cart-btn"
+            title="Shopping Cart"
+            onClick={handleCartButtonClick}
+          >
             <span>🛒</span>
-            <span className="cart-badge">0</span>
+            {cartItemCount > 0 && (
+              <span className="cart-badge">{cartItemCount}</span>
+            )}
           </button>
         </div>
       </div>

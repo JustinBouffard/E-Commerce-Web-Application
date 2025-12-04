@@ -2,7 +2,7 @@
 
 A React-based e-commerce application built for a school final project.
 
-**Vercel Link:** [ShopHub on Vercel](https://e-commerce-web-application-one.vercel.app)
+**Vercel Link:** [ShopHub on Vercel](https://shop-fm797jf34-justinbouffards-projects.vercel.app)
 
 ## Features
 
@@ -22,8 +22,6 @@ A React-based e-commerce application built for a school final project.
 ```bash
 npm run dev
 ```
-
-The app runs at `http://localhost:5173`
 
 ## Team
 

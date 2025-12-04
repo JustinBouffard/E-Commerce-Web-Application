@@ -20,12 +20,30 @@ const getInitialSortBy = () => {
   return saved ? saved : "popularity";
 };
 
+const getInitialCategory = () => {
+  const saved = localStorage.getItem("selectedCategory");
+  return saved ? saved : "";
+};
+
+const getInitialPriceRange = () => {
+  const saved = localStorage.getItem("priceRange");
+  try {
+    return saved ? JSON.parse(saved) : { min: 0, max: 10000 };
+  } catch {
+    return { min: 0, max: 10000 };
+  }
+};
+
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState(getInitialSearchQuery());
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState(getInitialSortBy());
+  const [selectedCategory, setSelectedCategory] = useState(
+    getInitialCategory()
+  );
+  const [priceRange, setPriceRange] = useState(getInitialPriceRange());
   const [cart, setCart] = useState([]);
   const [userReviews, setUserReviews] = useState({});
   const [lastOrder, setLastOrder] = useState(null);
@@ -82,6 +100,16 @@ function App() {
   useEffect(() => {
     localStorage.setItem("sortBy", sortBy);
   }, [sortBy]);
+
+  // Persist selected category to localStorage
+  useEffect(() => {
+    localStorage.setItem("selectedCategory", selectedCategory);
+  }, [selectedCategory]);
+
+  // Persist price range to localStorage
+  useEffect(() => {
+    localStorage.setItem("priceRange", JSON.stringify(priceRange));
+  }, [priceRange]);
 
   // Persist user reviews to localStorage
   useEffect(() => {
@@ -172,16 +200,20 @@ function App() {
   return (
     <>
       <main className="app">
-        <Navbar
-          searchQuery={searchQuery}
-          onSearchChange={handleSearch}
-          cartItemCount={cartItemCount}
-          onHomeClick={() => {
-            setSearchQuery("");
-            setCurrentPage(1);
-            navigate("/");
-          }}
-        />
+        {location.pathname !== "/checkout" && (
+          <Navbar
+            searchQuery={searchQuery}
+            onSearchChange={handleSearch}
+            cartItemCount={cartItemCount}
+            onHomeClick={() => {
+              setSearchQuery("");
+              setSelectedCategory("");
+              setPriceRange({ min: 0, max: 10000 });
+              setCurrentPage(1);
+              navigate("/");
+            }}
+          />
+        )}
         <Routes>
           <Route
             path="/"
@@ -195,6 +227,10 @@ function App() {
                 onPageChange={handlePageChange}
                 sortBy={sortBy}
                 onSortChange={handleSortChange}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+                priceRange={priceRange}
+                onPriceRangeChange={setPriceRange}
                 userReviews={userReviews}
                 onAddToCart={addToCart}
               />
@@ -238,6 +274,8 @@ function App() {
                 order={lastOrder}
                 onContinueShopping={() => {
                   setSearchQuery("");
+                  setSelectedCategory("");
+                  setPriceRange({ min: 0, max: 10000 });
                   setCurrentPage(1);
                   navigate("/");
                 }}

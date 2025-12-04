@@ -10,7 +10,7 @@ export default function Navbar({
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
-      // Search is automatically handled by parent through onSearchChange
+      navigate("/");
     }
   };
 

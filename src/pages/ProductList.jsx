@@ -8,10 +8,15 @@ export default function ProductList({
   onPageChange,
   sortBy,
   onSortChange,
+  selectedCategory,
+  onCategoryChange,
+  priceRange,
+  onPriceRangeChange,
   userReviews,
   onAddToCart,
 }) {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [sortedProducts, setSortedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,6 +35,13 @@ export default function ProductList({
         const data = await response.json();
         setProducts(data.products);
         setSortedProducts(data.products);
+
+        // Extract unique categories
+        const uniqueCategories = [
+          ...new Set(data.products.map((p) => p.category)),
+        ].sort();
+        setCategories(uniqueCategories);
+
         setError(null);
       } catch (err) {
         setError(err.message);
@@ -44,6 +56,22 @@ export default function ProductList({
 
   useEffect(() => {
     let sorted = [...products];
+
+    // Filter by category first
+    if (selectedCategory) {
+      sorted = sorted.filter(
+        (product) => product.category === selectedCategory
+      );
+    }
+
+    // Filter by price range
+    sorted = sorted.filter((product) => {
+      const discountedPrice =
+        product.price * (1 - product.discountPercentage / 100);
+      return (
+        discountedPrice >= priceRange.min && discountedPrice <= priceRange.max
+      );
+    });
 
     // Filter by search query
     if (searchQuery.trim()) {
@@ -91,12 +119,12 @@ export default function ProductList({
     }
 
     setSortedProducts(sorted);
-  }, [sortBy, products, searchQuery]);
+  }, [sortBy, products, searchQuery, selectedCategory, priceRange]);
 
-  // Reset to first page when search query or sort changes
+  // Reset to first page when search query, sort, category, or price changes
   useEffect(() => {
     onPageChange(1);
-  }, [searchQuery, sortBy]);
+  }, [searchQuery, sortBy, selectedCategory, priceRange]);
 
   // Calculate pagination
   const totalPages = Math.ceil(sortedProducts.length / productsPerPage);
@@ -142,8 +170,54 @@ export default function ProductList({
               {sortedProducts.length === 1 ? "Product" : "Products"}
               {searchQuery && ` found for "${searchQuery}"`}
             </span>
+            <div className="price-range-container">
+              <label className="price-label">💲 Price:</label>
+              <div className="price-range-inputs">
+                <span className="price-prefix">$</span>
+                <input
+                  type="number"
+                  className="price-input"
+                  placeholder="Min"
+                  value={priceRange.min}
+                  onChange={(e) =>
+                    onPriceRangeChange({
+                      ...priceRange,
+                      min: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  min="0"
+                />
+                <span className="price-separator">–</span>
+                <span className="price-prefix">$</span>
+                <input
+                  type="number"
+                  className="price-input"
+                  placeholder="Max"
+                  value={priceRange.max}
+                  onChange={(e) =>
+                    onPriceRangeChange({
+                      ...priceRange,
+                      max: parseFloat(e.target.value) || 10000,
+                    })
+                  }
+                  min="0"
+                />
+              </div>
+            </div>
           </div>
           <div className="toolbar-right">
+            <select
+              className="category-select"
+              value={selectedCategory}
+              onChange={(e) => onCategoryChange(e.target.value)}
+            >
+              <option value="">All Categories</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </option>
+              ))}
+            </select>
             <select
               className="sort-select"
               value={sortBy}

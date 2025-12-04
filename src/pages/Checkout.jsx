@@ -492,7 +492,10 @@ export default function Checkout({ cart, onCheckout, onCancel }) {
               <button
                 type="button"
                 className="btn btn-secondary"
-                onClick={onCancel}
+                onClick={() => {
+                  window.scrollTo(0, 0);
+                  onCancel();
+                }}
                 disabled={isProcessing}
               >
                 Cancel

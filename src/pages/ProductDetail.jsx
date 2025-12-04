@@ -47,6 +47,7 @@ export default function ProductDetail({
 
     if (productId) {
       fetchProductDetail();
+      window.scrollTo(0, 0);
     }
   }, [productId]);
 

@@ -2,7 +2,7 @@
 
 A React-based e-commerce application built for a school final project.
 
-**Vercel Link:** [ShopHub on Vercel][(https://shop-fm797jf34-justinbouffards-projects.vercel.app)](https://shophub-zeta.vercel.app)
+**Vercel Link:** [ShopHub on Vercel](https://shophub-zeta.vercel.app)
 
 ## Features
 
